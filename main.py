@@ -5,7 +5,7 @@ from USPparser import sem_parser
 from dbConnect import add_to_db, get_from_db
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
 from telegram.ext.filters import MessageFilter
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,18 +27,19 @@ with open('tok.txt','r') as f:
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
-    reply_markup = InlineKeyboardMarkup(button_list)
+    reply_markup = ReplyKeyboardMarkup(button_list)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text='Неизвестная команда. Вот возможные:\n' + update.message.text,
+                                   text='Неизвестная команда. Вот возможные:\n',
                                    reply_markup=reply_markup  # все ломает залупа
                                    )
 
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=2))
-    reply_markup = InlineKeyboardMarkup(button_list)
+    reply_markup = ReplyKeyboardMarkup(button_list)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text="Бот который быстро покажет баллы с сайта usp.kbsu\n"
-                                        "Небольшой совет* Чтобы каждый раз не логиниться - введи один раз команду /login Фамилия НомерЗачетки\n"
+                                   reply_markup=reply_markup,
+                                   text="Бот который быстро покажет баллы с сайта usp.kbsu\n\n"
+                                        "Чтобы каждый раз не логиниться - введи один раз команду /login Фамилия НомерЗачетки\n\n"
                                         "С помощью /usp Иванов 1234567 можешь искать баллы любого студента, если конечно знаешь его Фамилию и Номер зачетки."
                                    )
 
@@ -88,10 +89,8 @@ if __name__ == '__main__':
     # список кнопок
     button_list = [
         [
-            InlineKeyboardButton("login", callback_data='1'),
-        ],
-        [
-            InlineKeyboardButton("usp", callback_data='2'),
+            KeyboardButton("ups"),
+            KeyboardButton("usp123", callback_data='2'),
         ]
     ]
 
