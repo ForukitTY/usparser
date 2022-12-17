@@ -7,15 +7,19 @@ from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, CallbackQueryHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
 from telegram.ext.filters import MessageFilter
+
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
+class TgComands: # По хорошему все команды бота тут объявить. И класс этот в другом файле должен быть
+    pass
+
 
 class FilterMyData(MessageFilter):
     def filter(self, message):
-        return 'мои данные' in message.text.lower()
+        return 'usp' in message.text.lower()
 
 
 admin_id = 769578713
@@ -30,7 +34,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = ReplyKeyboardMarkup(button_list)
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text='Неизвестная команда. Вот возможные:\n',
-                                   reply_markup=reply_markup  # все ломает залупа
+                                   reply_markup=reply_markup
                                    )
 
 
@@ -45,7 +49,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    fam, num = context.args[0], context.args[1]
+    try:
+        fam, num = context.args[0], context.args[1]
+    except:
+        text = 'Введите свою фамилию и номер зачетки:'
+        await context.bot.send_message(chat_id=update.effective_chat.id,text=text)
+        # как ожидать ввода??
+
     print(fam, num)
     req = requests.post(url, data={'c_fam': fam, 'tabn': num})
 
@@ -61,14 +71,15 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        fam = context.args[0]
-        num = context.args[1]
+        fam, num = context.args[0], context.args[1]
     except:  # args == []
         fam, num = get_from_db(update.effective_user.id)
 
     if num == None:
         await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text='Вы не залогинились с помощью /login и не ввели данные для перехода на /usp. Сделайте хотя бы одно из двух')
+                                       text='Вы не залогинились с помощью /login\n'
+                                            'Вы не ввели данные для перехода по команде /usp\n'
+                                            'Сделайте хотя бы одно из двух')
         return 0
 
     else:
@@ -83,23 +94,22 @@ async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Баллы за последний семестр: {fam}\n\n{sem_parser(req.text)}')
 
 
-
 if __name__ == '__main__':
     application = ApplicationBuilder().token(token).build()
     # список кнопок
     button_list = [
         [
-            KeyboardButton("ups"),
-            KeyboardButton("usp123", callback_data='2'),
+            KeyboardButton("usp"), # и как сюда input данных въебать?
+            #KeyboardButton("Баллы2"), # обязательно название кнопки должно совпадать с командой???
         ]
     ]
 
-    #filter_awesome = FilterMyData()
-    # awesome_handler = MessageHandler(filter_awesome, login)
-    # application.add_handler(awesome_handler)
-
-    awesome_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
+    filter_awesome = FilterMyData()
+    awesome_handler = MessageHandler(filter_awesome, usp)
     application.add_handler(awesome_handler)
+
+    message_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
+    application.add_handler(message_handler)
 
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
