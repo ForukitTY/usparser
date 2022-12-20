@@ -1,4 +1,6 @@
 import logging
+import os
+
 import requests
 
 from USPparser import sem_parser
@@ -7,6 +9,13 @@ from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
 from telegram.ext.filters import MessageFilter
+
+from dotenv import load_dotenv
+
+url = 'https://usp.kbsu.ru/getinfo.php'
+
+load_dotenv()
+token = os.getenv('token')
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -32,12 +41,6 @@ class FilterSemestr(MessageFilter):  # тип в чат цифру пишет, �
 class FilterMyUsp(MessageFilter):
     def filter(self, message):
         return 'Мои баллы' in message.text
-
-
-url = 'https://usp.kbsu.ru/getinfo.php'
-
-with open('tok.txt','r') as f:
-    token = f.read()
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -93,8 +96,8 @@ async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if num == None:
         await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text='Вы не залогинились с помощью /login\n'
-                                            'Сделайте хотя бы одно из двух')
+                                       text='Вы не ввели данные для входа на сайт usp.kbsu\n'
+                                            'Отправьте мне фамилию и номер зачетки')
         return 0
 
     else:
@@ -140,7 +143,7 @@ if __name__ == '__main__':
     login_handler = CommandHandler('login', login)
     application.add_handler(login_handler)
 
-    usp_handler = CommandHandler('usp', usp)  # не работает поиск баллов других типов
+    usp_handler = CommandHandler('usp', usp)
     application.add_handler(usp_handler)
 
     message_handler = MessageHandler(~filter_my_data & filters.TEXT & (~filters.COMMAND), echo)
