@@ -19,13 +19,13 @@ class TgComands: # По хорошему все команды бота тут �
 
 class FilterMyData(MessageFilter):
     def filter(self, message):
-        txt = message.text.lower().split()
+        txt = message.text.split()
         return len(txt) == 2 and isinstance(txt[0], str) and txt[1].isdigit()
 
 
 class FilterSemestr(MessageFilter):  # тип в чат цифру пишет, а я ему баллы за этот семак сразу
     def filter(self, message):
-        txt = message.text.lower().strip()
+        txt = message.text.split()
         return len(txt) == 1 and txt[0].isdigit()
 
 
@@ -45,7 +45,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
     reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text='Неизвестная команда. Вот возможные:\n',
+                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp',
                                    reply_markup=reply_markup
                                    )
 
@@ -81,10 +81,11 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    reply_markup=reply_markup,
-                                   text=f'Отлично. Теперь ты можешь сразу посмотреть свои баллы кнопкой USP')
+                                   text=f'Отлично. Теперь ты можешь сразу посмотреть свои баллы за последний семестр кнопкой "Мои баллы"\n'
+                                        f'Если тебе нужны баллы за другой семестр, то просто отправь цифру нужного семестра.')
 
 
-async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE, semestr = -1):
+async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         fam, num = context.args[0], context.args[1]
     except:  # args == []
@@ -93,7 +94,6 @@ async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE, semestr = -1):
     if num == None:
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text='Вы не залогинились с помощью /login\n'
-                                            'Вы не ввели данные для перехода по команде /usp\n'
                                             'Сделайте хотя бы одно из двух')
         return 0
 
@@ -106,7 +106,12 @@ async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE, semestr = -1):
                                            f'Попробуй еще раз по шаблону /usp Иванов 1234567')
             return 0
         else:
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Баллы за последний семестр: {fam}\n\n{sem_parser(req.text)}')
+            semestr = int(update.message.text) if update.message.text.isdigit() else 0
+            print(semestr)
+            reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
+            await context.bot.send_message(chat_id=update.effective_chat.id,
+                                           reply_markup=reply_markup,
+                                           text=f'Баллы за {"последний" if semestr==0 else semestr} семестр: {fam}\n\n{sem_parser(req.text, semestr=semestr)}')
 
 
 if __name__ == '__main__':
@@ -116,8 +121,6 @@ if __name__ == '__main__':
         [
             KeyboardButton("Мои баллы"),  # и как сюда input данных въебать?
         ]
-
-
     ]
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
@@ -129,6 +132,10 @@ if __name__ == '__main__':
     filter_my_usp = FilterMyUsp()
     my_usp_handler = MessageHandler(filter_my_usp, usp)
     application.add_handler(my_usp_handler)
+
+    filter_sem = FilterSemestr()
+    semestr_handler = MessageHandler(filter_sem, usp)
+    application.add_handler(semestr_handler)
 
     login_handler = CommandHandler('login', login)
     application.add_handler(login_handler)
