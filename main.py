@@ -4,7 +4,7 @@ import requests
 from USPparser import sem_parser
 from dbConnect import add_to_db, get_from_db
 from telegram import Update
-from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, CallbackQueryHandler
+from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
 from telegram.ext.filters import MessageFilter
 
@@ -19,7 +19,19 @@ class TgComands: # По хорошему все команды бота тут �
 
 class FilterMyData(MessageFilter):
     def filter(self, message):
-        return 'мои баллы' in message.text.lower()
+        txt = message.text.lower().split()
+        return len(txt) == 2 and isinstance(txt[0], str) and txt[1].isdigit()
+
+
+class FilterSemestr(MessageFilter):  # тип в чат цифру пишет, а я ему баллы за этот семак сразу
+    def filter(self, message):
+        txt = message.text.lower().strip()
+        return len(txt) == 1 and txt[0].isdigit()
+
+
+class FilterMyUsp(MessageFilter):
+    def filter(self, message):
+        return 'Мои баллы' in message.text
 
 
 admin_id = 769578713
@@ -31,7 +43,7 @@ with open('tok.txt','r') as f:
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
-    reply_markup = ReplyKeyboardMarkup(button_list)
+    reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text='Неизвестная команда. Вот возможные:\n',
                                    reply_markup=reply_markup
@@ -39,37 +51,40 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reply_markup = ReplyKeyboardMarkup(button_list)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   reply_markup=reply_markup,
+                                   reply_markup=ReplyKeyboardRemove(),
                                    text="Бот который быстро покажет баллы с сайта usp.kbsu\n\n"
-                                        "Чтобы каждый раз не логиниться - введи один раз команду /login Фамилия НомерЗачетки\n\n"
-                                        "С помощью /usp Фамилия НомерЗачетки можешь искать баллы любого студента, если конечно знаешь его Фамилию и Номер зачетки."
+                                        "Введите свою фамилию и номер зачетки:"
                                    )
 
 
 async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        fam, num = context.args[0], context.args[1]
+        #await context.bot.send_message(chat_id=update.effective_chat.id,text=f'TRY LOGIN {update.message.text[0], type(update.message.text[1])}')
+        txt = update.message.text.split()
+        fam, num = txt[0], txt[1]
     except:
-        text = 'Введите свою фамилию и номер зачетки:'
+        text = 'Введите свою фамилию и номер зачетки "Иванов 1234567":'
         await context.bot.send_message(chat_id=update.effective_chat.id,text=text)
-        # как ожидать ввода??
+        return 0
 
     print(fam, num)
     req = requests.post(url, data={'c_fam': fam, 'tabn': num})
 
     if req.text == 'Не найден студент с такими данными':
         await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text=f'Не нашел таког студента. Может ты ввел неверные данные для входа, либо сайт не работает. Попробуй еще раз по шаблону /login Иванов 1234567')
+                                       text=f'Такой студент не найден.\n'
+                                            f'Введите еще раз по шаблону "Иванов 1234567"')
         return 0
 
     add_to_db(int(update.effective_user.id), str(fam), int(num))
+    reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text=f'Отлично. Теперь ты можешь сразу посмотреть свои баллы командой /usp')
+                                   reply_markup=reply_markup,
+                                   text=f'Отлично. Теперь ты можешь сразу посмотреть свои баллы кнопкой USP')
 
 
-async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE, semestr = -1):
     try:
         fam, num = context.args[0], context.args[1]
     except:  # args == []
@@ -99,20 +114,21 @@ if __name__ == '__main__':
     # список кнопок
     button_list = [
         [
-            KeyboardButton("Мои баллы"), # и как сюда input данных въебать?
-            #KeyboardButton("Баллы2"), # обязательно название кнопки должно совпадать с командой???
+            KeyboardButton("Мои баллы"),  # и как сюда input данных въебать?
         ]
+
+
     ]
-
-    filter_awesome = FilterMyData()
-    awesome_handler = MessageHandler(filter_awesome, usp)
-    application.add_handler(awesome_handler)
-
-    message_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), echo)
-    application.add_handler(message_handler)
-
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
+
+    filter_my_data = FilterMyData()
+    my_data_handler = MessageHandler(filter_my_data, login)
+    application.add_handler(my_data_handler)
+
+    filter_my_usp = FilterMyUsp()
+    my_usp_handler = MessageHandler(filter_my_usp, usp)
+    application.add_handler(my_usp_handler)
 
     login_handler = CommandHandler('login', login)
     application.add_handler(login_handler)
@@ -120,4 +136,6 @@ if __name__ == '__main__':
     usp_handler = CommandHandler('usp', usp)
     application.add_handler(usp_handler)
 
+    message_handler = MessageHandler(~filter_my_data & filters.TEXT & (~filters.COMMAND), echo)
+    application.add_handler(message_handler)
     application.run_polling()
