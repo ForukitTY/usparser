@@ -4,6 +4,7 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
-/asy.py
 # Editor-based HTTP Client requests
 /httpRequests/
+
+/TGUsers.db
