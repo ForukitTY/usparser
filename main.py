@@ -34,7 +34,6 @@ class FilterMyUsp(MessageFilter):
         return 'Мои баллы' in message.text
 
 
-admin_id = 769578713
 url = 'https://usp.kbsu.ru/getinfo.php'
 
 with open('tok.txt','r') as f:
@@ -45,8 +44,8 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
     reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp',
-                                   reply_markup=reply_markup
+                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp Фамилия Зачетки',
+                                   #reply_markup=reply_markup
                                    )
 
 
@@ -54,13 +53,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    reply_markup=ReplyKeyboardRemove(),
                                    text="Бот который быстро покажет баллы с сайта usp.kbsu\n\n"
-                                        "Введите свою фамилию и номер зачетки:"
+                                        "Если хочешь посмотреть баллы друга: /usp Фамилия Зачетки\n\n"
+                                        "Сейчас введи свою фамилию и номер зачетки:"
                                    )
 
 
 async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        #await context.bot.send_message(chat_id=update.effective_chat.id,text=f'TRY LOGIN {update.message.text[0], type(update.message.text[1])}')
         txt = update.message.text.split()
         fam, num = txt[0], txt[1]
     except:
@@ -88,6 +87,7 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         fam, num = context.args[0], context.args[1]
+        print('was correct usp data input', fam, num, ' from', update.effective_user.id)
     except:  # args == []
         fam, num = get_from_db(update.effective_user.id)
 
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # список кнопок
     button_list = [
         [
-            KeyboardButton("Мои баллы"),  # и как сюда input данных въебать?
+            KeyboardButton("Мои баллы"),
         ]
     ]
     start_handler = CommandHandler('start', start)
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     login_handler = CommandHandler('login', login)
     application.add_handler(login_handler)
 
-    usp_handler = CommandHandler('usp', usp)
+    usp_handler = CommandHandler('usp', usp)  # не работает поиск баллов других типов
     application.add_handler(usp_handler)
 
     message_handler = MessageHandler(~filter_my_data & filters.TEXT & (~filters.COMMAND), echo)

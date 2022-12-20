@@ -2,7 +2,7 @@ import sqlite3
 
 
 def add_to_db(tg_id: int, surname: str, za4etka: int):
-    connect = sqlite3.connect(r'C:\sqliteDBs\TGUsers.db')
+    connect = sqlite3.connect(r'TGUsers.db')
     cursos = connect.cursor()
     data = [tg_id, surname, za4etka]
     try:
@@ -16,7 +16,7 @@ def add_to_db(tg_id: int, surname: str, za4etka: int):
 
 
 def get_from_db(tg_id: int) -> tuple:
-    connect = sqlite3.connect(r'C:\sqliteDBs\TGUsers.db')
+    connect = sqlite3.connect(r'TGUsers.db')
     cursos = connect.cursor()
     cursos.execute(f"""SELECT surname, bookNumber FROM Users WHERE tgID={tg_id}""")
     records = cursos.fetchall()
