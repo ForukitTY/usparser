@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+# TODO: жирный шрифт и чуть более понятное выделение текста
 
 
 def sem_parser(req, semestr=0):
@@ -16,6 +17,6 @@ def sem_parser(req, semestr=0):
     for row in table.find_all('tr')[2:]:
         line = row.find_all('td')
         line_mark = line[ITOG_ID].text.strip()
-        pars_line += line[PREDMET_ID].text.strip() + '. ' + line[PREDMET].text.strip() + ' - ' + line[PREPOD_ID].text.strip() + ' |' + line_mark + ('| ✅ \n' if int(line_mark) > 60 else '| 🛑\n')
+        pars_line += line[PREDMET_ID].text.strip() + '. ' + line[PREDMET].text.strip() + ' - ' + line[PREPOD_ID].text.strip() + ' | ' + line_mark + (' | ✅ \n' if int(line_mark) > 60 else ' | 🛑\n')
 
     return pars_line

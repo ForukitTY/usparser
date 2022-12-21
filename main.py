@@ -22,8 +22,8 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-class TgComands: # По хорошему все команды бота тут объявить. И класс этот в другом файле должен быть
-    pass
+#TODO: 1. Добавить логирование во все функции
+#TODO: 2. Не обновлять данные в бд после каждого сообщения "Фамилия Зачетка", а только через login (за исключением первого запуска бота)
 
 
 class FilterMyData(MessageFilter):
@@ -51,6 +51,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"bot was started by user: {update.message.from_user.id, update.effective_user.full_name}")
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    reply_markup=ReplyKeyboardRemove(),
                                    text="Бот который быстро покажет баллы с сайта usp.kbsu\n\n"
@@ -64,8 +65,8 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
         txt = update.message.text.split()
         fam, num = txt[0], txt[1]
     except:
-        text = 'Введите свою фамилию и номер зачетки "Иванов 1234567":'
-        await context.bot.send_message(chat_id=update.effective_chat.id,text=text)
+        text = 'Введите свою фамилию и номер зачетки:'
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         return 0
 
     print(fam, num)
@@ -74,7 +75,7 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if req.text == 'Не найден студент с такими данными':
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text=f'Такой студент не найден.\n'
-                                            f'Введите еще раз по шаблону "Иванов 1234567"')
+                                            f'Введите свой логин и зачетку еще раз:')
         return 0
 
     add_to_db(int(update.effective_user.id), str(fam), int(num))
@@ -82,37 +83,40 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    reply_markup=reply_markup,
                                    text=f'Отлично. Теперь ты можешь сразу посмотреть свои баллы за последний семестр кнопкой "Мои баллы"\n'
-                                        f'Если тебе нужны баллы за другой семестр, то просто отправь цифру нужного семестра.')
+                                        f'Если тебе нужны баллы за другой семестр, то просто отправь мне цифру нужного семестра.')
 
 
 async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
+    try:   # случай: /usp ФамилияДруга Зачетка
         fam, num = context.args[0], context.args[1]
-        print('was correct usp data input', fam, num, ' from', update.effective_user.id)
-    except:  # args == []
+        print('was correct usp data input ', fam, num, ' from', update.effective_user.id)
+    except:  # случай: args == [], может он есть в базе, но решил через /usp чекнуть баллы
         fam, num = get_from_db(update.effective_user.id)
 
-    if num == None:
+    if num == None:  # оба случая сверху не верные. Юзер не ввел ничего
+        logging.info(f"TgUser: {update.effective_user.id, update.effective_user.full_name} не найден в базе и не написал данные после /usp")
         await context.bot.send_message(chat_id=update.effective_chat.id,
                                        text='Вы не ввели данные для входа на сайт usp.kbsu\n'
                                             'Отправьте мне фамилию и номер зачетки')
         return 0
 
-    else:
+    else:  # юзер ввел данные в /usp fam num
         req = requests.post(url, data={'c_fam': fam, 'tabn': num})
 
-        if req.text == 'Не найден студент с такими данными':
+        if req.text == 'Не найден студент с такими данными':   # мог ввести неверно
+            logging.info(f"TgUser: {update.effective_user.id, update.effective_user.full_name} не найден в базе и написал неверные данные для логина на сайт")
             await context.bot.send_message(chat_id=update.effective_chat.id,
                                            text=f'Кажется ты ввел неверные данные для входа на сайт.\n'
                                            f'Попробуй еще раз по шаблону /usp Иванов 1234567')
             return 0
-        else:
-            semestr = int(update.message.text) if update.message.text.isdigit() else 0
-            print(semestr)
+        else:  # ввел корректно /usp fam num, либо был найден в базе после /usp, либо попал в фильтр FilterSemestr и был найден в базе
+
+            semestr = int(update.message.text) if update.message.text.isdigit() else 0  # если вверл цифру-семестр, иначе отдаем последний семестр
             reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
             await context.bot.send_message(chat_id=update.effective_chat.id,
                                            reply_markup=reply_markup,
                                            text=f'Баллы за {"последний" if semestr==0 else semestr} семестр: {fam}\n\n{sem_parser(req.text, semestr=semestr)}')
+            logging.info(f'TgUser: {update.effective_user.id, update.effective_user.full_name}, получил баллы за {"последний" if semestr==0 else semestr} семестр')
 
 
 if __name__ == '__main__':
