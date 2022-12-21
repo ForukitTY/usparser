@@ -45,10 +45,8 @@ class FilterMyUsp(MessageFilter):
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
-    reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp Фамилия Зачетки',
-                                   #reply_markup=reply_markup
+                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp Фамилия Зачетки'
                                    )
 
 
