@@ -19,7 +19,9 @@ token = os.getenv('token')
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.INFO,
+    encoding = "UTF-8",
+    filename=r'C:\telegBot\usparser\bot_logs.log'
 )
 
 #TODO: 1. Добавить логирование во все функции
@@ -46,7 +48,7 @@ class FilterMyUsp(MessageFilter):
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp Фамилия Зачетки'
+                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp Фамилия   Зачетка'
                                    )
 
 
@@ -55,8 +57,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    reply_markup=ReplyKeyboardRemove(),
                                    text="Бот который быстро покажет баллы с сайта usp.kbsu\n\n"
-                                        "Если хочешь посмотреть баллы друга: /usp Фамилия Зачетки\n\n"
-                                        "Сейчас введи свою фамилию и номер зачетки:"
+                                        "Если хочешь посмотреть баллы друга:\n/usp Фамилия(друга)   Зачетка(друга)\n\n"
+                                        "Сейчас введи свою фамилию и номер зачетки, чтобы больше не логиниться:"
                                    )
 
 
@@ -89,7 +91,7 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:   # случай: /usp ФамилияДруга Зачетка
         fam, num = context.args[0], context.args[1]
-        print('was correct usp data input ', fam, num, ' from', update.effective_user.id)
+        logging.info(f'was correct usp data input {fam}, {num} from: {update.effective_user.id}')
     except:  # случай: args == [], может он есть в базе, но решил через /usp чекнуть баллы
         fam, num = get_from_db(update.effective_user.id)
 

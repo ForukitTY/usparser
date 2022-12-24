@@ -1,0 +1,1 @@
+start C:\telegBot\ProjectFolder\Scripts\pythonw.exe C:\telegBot\usparser\main.py

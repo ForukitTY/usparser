@@ -1,9 +1,12 @@
+import os
 import sqlite3
 import logging
 
 
 def add_to_db(tg_id: int, surname: str, za4etka: int):
-    connect = sqlite3.connect(r'TGUsers.db')
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(BASE_DIR, "TGUsers.db")
+    connect = sqlite3.connect(db_path)
     cursos = connect.cursor()
     data = [tg_id, surname, za4etka]
     try:
@@ -19,14 +22,18 @@ def add_to_db(tg_id: int, surname: str, za4etka: int):
 
 
 def get_from_db(tg_id: int) -> tuple:
-    connect = sqlite3.connect(r'TGUsers.db')
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(BASE_DIR, "TGUsers.db")
+    connect = sqlite3.connect(db_path)
     cursos = connect.cursor()
     cursos.execute(f"""SELECT surname, bookNumber FROM Users WHERE tgID={tg_id}""")
     records = cursos.fetchall()
     cursos.close()
     try:
-        return records[0]
+        usp_login_data = records[0]
         logging.info(f"[DB GET SUCCESS] by user {tg_id}")
+        return usp_login_data
     except:  # если пользователь не найден в базе
-        return None, None
         logging.info(f"[DB GET EMPTY] by user {tg_id}")
+        return None, None
+
