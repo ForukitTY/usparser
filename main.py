@@ -1,6 +1,7 @@
 import logging
 import os
 import requests
+from datetime import datetime
 
 from USPparser import sem_parser
 from dbConnect import add_to_db, get_from_db
@@ -24,7 +25,7 @@ logging.basicConfig(
     filename=r'C:\telegBot\usparser\bot_logs.log'
 )
 
-#TODO: 1. Добавить логирование во все функции
+#TODO: 1. Сделать через ООП. Новый юзер = новый экземпляр
 #TODO: 2. Не обновлять данные в бд после каждого сообщения "Фамилия Зачетка", а только через login (за исключением первого запуска бота)
 
 
@@ -45,10 +46,23 @@ class FilterMyUsp(MessageFilter):
         return 'Мои баллы' in message.text
 
 
+class FilterWeek(MessageFilter):
+    def filter(self, message):
+        return 'Неделя:' in message.text
+
+
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text='Неизвестная команда. Вот возможные:\n/login\n/usp Фамилия   Зачетка'
+                                   text='Неизвестная команда. Вот возможные:\n/login   Фамилия   Зачетка\n/usp   Фамилия   Зачетка'
+                                   )
+
+
+async def week(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"user: {update.message.from_user.id, update.effective_user.full_name} запросил неделю.")
+    week_state = "Верхняя" if datetime.now().isocalendar()[1] % 2 == 0 else "Нижняя"
+    await context.bot.send_message(chat_id=update.effective_chat.id,
+                                   text=f"{datetime.now().date()}\n-{week_state} неделя"
                                    )
 
 
@@ -123,18 +137,26 @@ async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == '__main__':
     application = ApplicationBuilder().token(token).build()
-    # список кнопок
+
     button_list = [
         [
             KeyboardButton("Мои баллы"),
+        ],
+        [
+            KeyboardButton("Неделя:"),
         ]
     ]
+
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
 
     filter_my_data = FilterMyData()
     my_data_handler = MessageHandler(filter_my_data, login)
     application.add_handler(my_data_handler)
+
+    filter_week = FilterWeek()
+    week_handler = MessageHandler(filter_week, week)
+    application.add_handler(week_handler)
 
     filter_my_usp = FilterMyUsp()
     my_usp_handler = MessageHandler(filter_my_usp, usp)
