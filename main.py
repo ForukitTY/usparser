@@ -131,7 +131,7 @@ async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
             await context.bot.send_message(chat_id=update.effective_chat.id,
                                            reply_markup=reply_markup,
-                                           text=f'Баллы за {"последний" if semestr==0 else semestr} семестр: {fam}\n\n{sem_parser(req.text, semestr=semestr)}')
+                                           text=f'Итоговые баллы за {"последний" if semestr==0 else semestr} семестр: {fam}\n\n{sem_parser(req.text, semestr=semestr)}')
             logging.info(f'TgUser: {update.effective_user.id, update.effective_user.full_name}, получил баллы за {"последний" if semestr==0 else semestr} семестр')
 
 
