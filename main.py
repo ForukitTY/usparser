@@ -60,7 +60,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def week(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"user: {update.message.from_user.id, update.effective_user.full_name} запросил неделю.")
-    week_state = "Верхняя" if datetime.now().isocalendar()[1] % 2 == 0 else "Нижняя"
+    week_state = "Верхняя" if datetime.now().isocalendar()[1] % 2 == 1 else "Нижняя"
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text=f"{datetime.now().date()}\n-{week_state} неделя"
                                    )
