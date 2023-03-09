@@ -13,10 +13,12 @@ def sem_parser(req, semestr=0):
     PREDMET = 1
     PREPOD_ID = 2
     ITOG_ID = -2
-    pars_line = ''
+    parsed_line = ''
     for row in table.find_all('tr')[2:]:
-        line = row.find_all('td')
-        line_mark = line[ITOG_ID].text.strip()
-        pars_line += line[PREDMET_ID].text.strip() + '. ' + line[PREDMET].text.strip() + ' - ' + line[PREPOD_ID].text.strip() + ' | ' + line_mark + (' | ✅ \n' if int(line_mark) > 60 else ' | 🛑\n')
+        cells = row.find_all('td')
+        list_control_points = row.find_all(attrs={"class": "cltdb"})[:3]
+        line_mark = cells[ITOG_ID].text.strip()
+        parsed_line += cells[PREDMET_ID].text.strip() + '. ' + cells[PREDMET].text.strip() + ' - ' + cells[PREPOD_ID].text.strip() \
+                       + ' | \n' + str([int(control_mark_i.text) for control_mark_i in list_control_points]) + ' Итог: ' + line_mark + ('  ✅\n\n' if int(line_mark) > 60 else '  🛑\n\n')
 
-    return pars_line
+    return parsed_line
