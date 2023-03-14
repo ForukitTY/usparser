@@ -37,3 +37,10 @@ def get_from_db(tg_id: int) -> tuple:
         logging.info(f"[DB GET EMPTY] by user {tg_id}")
         return None, None
 
+def users_count():
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(BASE_DIR, "TGUsers.db")
+    connect = sqlite3.connect(db_path)
+    cursos = connect.cursor()
+    cursos.execute(f"""SELECT Count(*) FROM Users""")
+    return cursos.fetchone()[0]
