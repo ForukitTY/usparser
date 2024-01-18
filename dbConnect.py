@@ -15,7 +15,6 @@ def add_to_db(tg_id: int, surname: str, za4etka: int):
     except:
         cursos.execute("""UPDATE Users set surname=?, bookNumber =? WHERE tgID = ?;""", (surname, za4etka, tg_id))
         logging.info(f"[DB UPDATE] {data}")
-        print(f'Обновили данные для {tg_id}, {surname}')
 
     connect.commit()
     cursos.close()
@@ -36,6 +35,7 @@ def get_from_db(tg_id: int) -> tuple:
     except:  # если пользователь не найден в базе
         logging.info(f"[DB GET EMPTY] by user {tg_id}")
         return None, None
+
 
 def users_count():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))

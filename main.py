@@ -23,20 +23,20 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO,
     encoding="UTF-8",
-    filename=r'C:\telegBot\usparser\bot_logs.log'
+    filename=r'.\logs.log'
 )
 
-#TODO: 1. Сделать через ООП. Новый юзер = новый экземпляр
+#TODO: 1. Добавить описание к функциям и аннотации
 #TODO: 2. Не обновлять данные в бд после каждого сообщения "Фамилия Зачетка", а только через login (за исключением первого запуска бота)
 
 
-class FilterMyData(MessageFilter):
+class FilterMyData(MessageFilter):  # ловит логин (ввод фамилии и зачетки)
     def filter(self, message):
         txt = message.text.split()
         return len(txt) == 2 and isinstance(txt[0], str) and txt[1].isdigit()
 
 
-class FilterSemestr(MessageFilter):  # тип в чат цифру пишет, а я ему баллы за этот семак сразу
+class FilterSemestr(MessageFilter):  # цифра в чат = вернуть семестр по ней
     def filter(self, message):
         txt = message.text.split()
         return len(txt) == 1 and txt[0].isdigit()
@@ -61,6 +61,8 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.text)
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text='Неизвестная команда. Вот возможные:\n/login   Фамилия   Зачетка'
+                                        '\n/usp - вернет баллы за последний семестр'
+                                        '\nМожешь просто отправить номер семестра, который нужно вывести'
                                    )
 
 
@@ -106,6 +108,7 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(chat_id=admin_id, text=f"Иу у нас +1 пользовтель. Теперь нас {users_count()}")
 
+
 async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     fam, num = get_from_db(update.effective_user.id)
@@ -129,7 +132,7 @@ async def usp(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return 0
         else:  # баллы найдены на сайте
 
-            semestr = int(update.message.text) if update.message.text.isdigit() else 0  # если вверл цифру-семестр, иначе отдаем последний семестр
+            semestr = int(update.message.text) if update.message.text.isdigit() else 0  # если ввел цифру-семестр, иначе отдаем последний семестр
             reply_markup = ReplyKeyboardMarkup(button_list, resize_keyboard=True)
             await context.bot.send_message(chat_id=update.effective_chat.id,
                                            reply_markup=reply_markup,
@@ -187,4 +190,5 @@ if __name__ == '__main__':
 
     message_handler = MessageHandler(~filter_my_data & filters.TEXT & (~filters.COMMAND), echo)
     application.add_handler(message_handler)
+
     application.run_polling()
